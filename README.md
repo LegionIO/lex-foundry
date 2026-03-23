@@ -1,6 +1,10 @@
 # lex-foundry
 
-LegionIO extension for Azure AI Foundry (formerly Azure AI Studio). Provides runners for the Azure AI Foundry REST API — model catalog, deployments, and workspace connections.
+Legion Extension for Azure AI Foundry (formerly Azure AI Studio). Provides runners for the Azure AI Foundry REST API — workspace connections, online endpoint deployments, and the model catalog.
+
+## Purpose
+
+Wraps the Azure AI Foundry management and workspace APIs as named runners consumable by any LegionIO task chain. Use this extension when you need to manage Azure ML workspace resources (connections, deployments, models) within the LEX runner/actor lifecycle. For inference against deployed models, use `lex-azure-ai` instead.
 
 ## Installation
 
@@ -38,9 +42,22 @@ Legion::Extensions::Foundry::Runners::Deployments.list(token: 'tok', endpoint: '
 Legion::Extensions::Foundry::Runners::Connections.list(token: 'tok', endpoint: 'ep', subscription_id: 'sid', resource_group: 'rg', workspace: 'ws')
 ```
 
+## API Coverage
+
+| Runner | Methods |
+|--------|---------|
+| `Connections` | `list`, `get`, `create`, `delete` |
+| `Deployments` | `list`, `get`, `create`, `delete` |
+| `Models` | `list`, `get` |
+
 ## API Version
 
 Default: `2024-10-01-preview`. Pass `api_version:` to override.
+
+## Related
+
+- `lex-azure-ai` — Azure OpenAI inference (chat completions, embeddings)
+- `extensions-ai/CLAUDE.md` — Architecture patterns shared across all AI extensions
 
 ## License
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2] - 2026-03-22
+
+### Changed
+- Add legion-cache, legion-crypt, legion-data, legion-json, legion-logging, legion-settings, and legion-transport as runtime dependencies in gemspec
+- Update spec_helper with real sub-gem helper requires and full Helpers::Lex stub (all 7 includes)
+- Add simplecov to Gemfile test group
+
 ## [0.1.0] - 2026-03-21
 
 ### Added
