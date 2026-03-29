@@ -10,7 +10,7 @@ Legion Extension that connects LegionIO to Azure AI Foundry (formerly Azure AI S
 
 **GitHub**: https://github.com/LegionIO/lex-foundry
 **License**: MIT
-**Version**: 0.1.0
+**Version**: 0.1.2
 **Specs**: 21 examples
 
 ## Architecture
