@@ -7,5 +7,6 @@ gemspec
 group :test do
   gem 'rspec'
   gem 'rubocop'
+  gem 'rubocop-legion', '~> 0.1'
   gem 'simplecov'
 end
