@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.4] - 2026-03-31
+
+### Added
+- Standardized `usage:` key in all runner return hashes with `input_tokens`, `output_tokens`, `cache_read_tokens`, and `cache_write_tokens` fields parsed from Anthropic Foundry API responses (defaults to zero when not present)
+
 ## [0.1.3] - 2026-03-30
 
 ### Changed

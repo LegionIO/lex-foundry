@@ -24,6 +24,10 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Connections do
     allow(Faraday).to receive(:new).and_return(conn)
   end
 
+  let(:zero_usage) do
+    { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_write_tokens: 0 }
+  end
+
   describe '#list' do
     it 'lists workspace connections' do
       body = { 'value' => [{ 'name' => 'my-conn' }] }
@@ -39,6 +43,51 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Connections do
         workspace:       workspace
       )
       expect(result[:connections]).to eq(body)
+    end
+
+    it 'includes usage in the response' do
+      body = { 'value' => [{ 'name' => 'my-conn' }] }
+      allow(conn).to receive(:get)
+        .with("#{base_path}?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.list(
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
+    end
+
+    it 'parses usage fields when present in the response' do
+      body = {
+        'value' => [],
+        'usage' => {
+          'input_tokens'                => 10,
+          'output_tokens'               => 20,
+          'cache_read_input_tokens'     => 5,
+          'cache_creation_input_tokens' => 3
+        }
+      }
+      allow(conn).to receive(:get)
+        .with("#{base_path}?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.list(
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(
+        input_tokens:       10,
+        output_tokens:      20,
+        cache_read_tokens:  5,
+        cache_write_tokens: 3
+      )
     end
 
     it 'uses a custom api_version' do
@@ -76,6 +125,23 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Connections do
       )
       expect(result[:connection]).to eq(body)
     end
+
+    it 'includes usage in the response' do
+      body = { 'name' => 'my-conn', 'properties' => {} }
+      allow(conn).to receive(:get)
+        .with("#{base_path}/my-conn?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.get(
+        name:            'my-conn',
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
+    end
   end
 
   describe '#create' do
@@ -97,6 +163,25 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Connections do
         workspace:       workspace
       )
       expect(result[:connection]).to eq(body)
+    end
+
+    it 'includes usage in the response' do
+      body = { 'name' => 'new-conn' }
+      allow(conn).to receive(:put)
+        .with("#{base_path}/new-conn?api-version=2024-10-01-preview", anything)
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.create(
+        name:            'new-conn',
+        type:            'AzureBlob',
+        target:          'https://myaccount.blob.core.windows.net',
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
     end
 
     it 'includes target in the request body' do
@@ -136,6 +221,22 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Connections do
         workspace:       workspace
       )
       expect(result[:deleted]).to be true
+    end
+
+    it 'includes zero usage in delete response' do
+      allow(conn).to receive(:delete)
+        .with("#{base_path}/old-conn?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: nil, status: 204))
+
+      result = test_class.delete(
+        name:            'old-conn',
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
     end
   end
 end
