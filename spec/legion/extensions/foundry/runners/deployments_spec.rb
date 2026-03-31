@@ -25,6 +25,10 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Deployments do
     allow(Faraday).to receive(:new).and_return(conn)
   end
 
+  let(:zero_usage) do
+    { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_write_tokens: 0 }
+  end
+
   describe '#list' do
     it 'lists deployments' do
       body = { 'value' => [{ 'name' => 'my-deployment' }] }
@@ -40,6 +44,51 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Deployments do
         workspace:       workspace
       )
       expect(result[:deployments]).to eq(body)
+    end
+
+    it 'includes usage in the response' do
+      body = { 'value' => [{ 'name' => 'my-deployment' }] }
+      allow(conn).to receive(:get)
+        .with("#{base_path}?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.list(
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
+    end
+
+    it 'parses usage fields when present in the response' do
+      body = {
+        'value' => [],
+        'usage' => {
+          'input_tokens'                => 15,
+          'output_tokens'               => 25,
+          'cache_read_input_tokens'     => 4,
+          'cache_creation_input_tokens' => 2
+        }
+      }
+      allow(conn).to receive(:get)
+        .with("#{base_path}?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.list(
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(
+        input_tokens:       15,
+        output_tokens:      25,
+        cache_read_tokens:  4,
+        cache_write_tokens: 2
+      )
     end
 
     it 'uses a custom api_version' do
@@ -77,6 +126,23 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Deployments do
       )
       expect(result[:deployment]).to eq(body)
     end
+
+    it 'includes usage in the response' do
+      body = { 'name' => 'my-deployment', 'properties' => {} }
+      allow(conn).to receive(:get)
+        .with("#{base_path}/my-deployment?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.get(
+        name:            'my-deployment',
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
+    end
   end
 
   describe '#create' do
@@ -97,6 +163,24 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Deployments do
         workspace:       workspace
       )
       expect(result[:deployment]).to eq(body)
+    end
+
+    it 'includes usage in the response' do
+      body = { 'name' => 'new-deployment' }
+      allow(conn).to receive(:put)
+        .with("#{base_path}/new-deployment?api-version=2024-10-01-preview", anything)
+        .and_return(instance_double(Faraday::Response, body: body))
+
+      result = test_class.create(
+        name:            'new-deployment',
+        model:           'gpt-4o',
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
     end
 
     it 'uses a custom sku' do
@@ -135,6 +219,22 @@ RSpec.describe Legion::Extensions::Foundry::Runners::Deployments do
         workspace:       workspace
       )
       expect(result[:deleted]).to be true
+    end
+
+    it 'includes zero usage in delete response' do
+      allow(conn).to receive(:delete)
+        .with("#{base_path}/old-deployment?api-version=2024-10-01-preview")
+        .and_return(instance_double(Faraday::Response, body: nil, status: 204))
+
+      result = test_class.delete(
+        name:            'old-deployment',
+        token:           token,
+        endpoint:        endpoint,
+        subscription_id: subscription_id,
+        resource_group:  resource_group,
+        workspace:       workspace
+      )
+      expect(result[:usage]).to eq(zero_usage)
     end
   end
 end
